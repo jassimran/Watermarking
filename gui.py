@@ -216,10 +216,7 @@ class GraphicalInterface(Frame):
 			"""TO-DO: Verify image - Samuel """
 			verify_watermark(self.watermarkedFile, self.originalFile, self.privateKey, self.publicKey)			
 			#to show confirmation popup - Style 0 is for OK popup
-			#if verified successfully
 			ctypes.windll.user32.MessageBoxA( 0, "Watermarked is verified!!", "Verification completed",0)
-			#else 
-			ctypes.windll.user32.MessageBoxA( 0, "Watermarked is not verified!!", "Verification completed",0)
 		
 
 root = Tk()
