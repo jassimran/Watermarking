@@ -8,7 +8,7 @@ from Crypto import Random
 import ctypes
 import tkFont
 
-from fp_functions import hash_file
+from fp_functions import *
 from fp_functions import gen_RSA_keys
 from fp_functions import sign_hash
 from fp_functions import read_bits
@@ -28,8 +28,7 @@ class GraphicalInterface(Frame):
 		#path variables
 		self.filename = ""
 		self.dir= ""
-		self.privateKey= ""		
-		self.publicKey= ""
+		self.privateKey= ""	
 		self.originalFile = ""
 		self.watermarkedFile = ""
 		
@@ -67,6 +66,13 @@ class GraphicalInterface(Frame):
 
 		WatermarkFrame.grid(row = 0, column = 0, rowspan = 3, columnspan = 2, 
 		padx=10, pady= 10, sticky = W+E+N+S)
+		
+		Label(WatermarkFrameOuter, 
+		text = "Select the private key : ").grid(row = 3, column = 0, sticky = W)
+		#Browse private key file button
+		Button(WatermarkFrameOuter, 
+		text = " Browse ", 
+		command = self.browse_privateKey).grid(row = 3, column = 1, sticky = W )
 		
 		#Watermark button
 		Button(WatermarkFrameOuter, 
@@ -117,12 +123,6 @@ class GraphicalInterface(Frame):
 		text = " Browse ", 
 		command = self.browse_privateKey).grid(row = 1, column = 1, sticky = W )
 		
-		Label(VerifyFrameRight, 
-		text = "Select the public key : ").grid(row = 2, column = 0, sticky = W)
-		#Browse public key file button
-		Button(VerifyFrameRight, 
-		text = " Browse ", 
-		command = self.browse_publicKey).grid(row = 2, column = 1, sticky = W )
 		
 		VerifyFrameRight.grid(row = 0, column = 2, rowspan = 3, columnspan = 2, 
 		padx= 10, pady = 10, sticky = W+E+N+S)
@@ -151,12 +151,7 @@ class GraphicalInterface(Frame):
 	def browse_privateKey(self):
 		from tkFileDialog import askopenfilename
 		Tk().withdraw()
-		self.privateKey = askopenfilename()
-		
-	def browse_publicKey(self):
-		from tkFileDialog import askopenfilename
-		Tk().withdraw()
-		self.publicKey = askopenfilename()	
+		self.privateKey = askopenfilename()	
 
 	def browse_originalFile(self):
 		from tkFileDialog import askopenfilename
@@ -174,7 +169,7 @@ class GraphicalInterface(Frame):
 			"""Single image watermarking-----"""
 			image = cv2.imread(self.filename)
 			imageHash = hash_file(self.filename)
-			key = gen_RSA_keys(1024)
+			key = import_key(self.privateKey)
 
 			signature = sign_hash(key, imageHash)
 			watermarkedImage = apply_watermark(signature, image)
@@ -185,11 +180,8 @@ class GraphicalInterface(Frame):
 			
 		elif self.fav.get() == "2":
 			"""Multiple image watermarking - Samuel's code here"""
-			key = gen_RSA_keys(1024)
-			print self.dir
+			key = import_key(self.privateKey)
 			watermark_dir(key, self.dir+"/")
-			#TODO: Verify that watermarking is done
-			#If done , uncomment below lines
 			ctypes.windll.user32.MessageBoxA( 0, "Image watermarked successfully!!", "Watermarking completed",0)
 			
 		else:
@@ -203,10 +195,6 @@ class GraphicalInterface(Frame):
 		elif self.privateKey == "":
 			#checking if privateKey file has been selected 
 			ctypes.windll.user32.MessageBoxA( 0, "Please select the file containing the private key for verification", "Warning",0)
-			
-		elif self.publicKey == "":
-			#checking if privateKey file has been selected 
-			ctypes.windll.user32.MessageBoxA( 0, "Please select the file containing the public key for verification", "Warning",0)
 
 		elif self.originalFile == "":
 			#checking if original file has been selected 
@@ -214,14 +202,28 @@ class GraphicalInterface(Frame):
 		
 		else:
 			"""TO-DO: Verify image - Samuel """
-			verify_watermark(self.watermarkedFile, self.originalFile, self.privateKey, self.publicKey)			
-			#to show confirmation popup - Style 0 is for OK popup
-			ctypes.windll.user32.MessageBoxA( 0, "Watermarked is verified!!", "Verification completed",0)
+
+			imageHash = hash_file(self.originalFile)
+			imageToBeRead = cv2.imread(self.watermarkedFile)
+			key = import_key(self.privateKey)
+			signature = sign_hash(key, imageHash)
+			sigLength = read_bits(signature, 0)[1]
+			watermark = read_watermark(imageToBeRead, sigLength)
+			#TODO: Get public key
+			publicKey = key.publickey()
+			if publicKey.verify(imageHash.digest(), watermark):
+				print 'Watermarked image saved to directory'
+				print 'Watermark successfully applied and verified!'			
+				#to show confirmation popup - Style 0 is for OK popup
+				#if verified successfully
+				ctypes.windll.user32.MessageBoxA( 0, "Watermarked is verified!!", "SUCCESS",0)
+			else: 
+				ctypes.windll.user32.MessageBoxA( 0, "Watermarked is NOT verified!!", "FAILURE",0)
 		
 
 root = Tk()
 root.title("Watermarking")
-root.geometry("735x210")
+root.geometry("755x210")
 app = GraphicalInterface(root)
 root.mainloop()
 

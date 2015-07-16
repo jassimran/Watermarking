@@ -29,10 +29,13 @@ def hash_file(FILE_NAME):
     output:
     hasher is the HASH object created by the hashlib function
     '''
+    blockSize = 2 ** 16
     fileHash = hashlib.sha256()
     with open(FILE_NAME, 'rb') as afile:
-        buf = afile.read()
-        fileHash.update(buf)
+        buf = afile.read(blockSize)
+        while len(buf) > 0:
+            fileHash.update(buf)
+            buf = afile.read(blockSize)
     return fileHash
 
 
@@ -196,23 +199,34 @@ def watermark_dir(key, IMAGE_PATH):
 
 
 
+'''
+Need function read a private and public RSA key and load as a pycrypto key object
+in memory.
 
+Rewrite hash function to handle larger files.
+'''
 
+def import_key(KEY_PATH):
+    '''
+    Description:  This function reads an RSA key file in PKCS#1 or PKCS#8 in 
+    binary or PEM encoding.  It can also read OpenSSH text keys.
 
+    References:
+    https://www.dlitz.net/software/pycrypto/api/current/Crypto.PublicKey.RSA-module.html#importKey
+    https://www.dlitz.net/software/pycrypto/api/current/Crypto.PublicKey.RSA._RSAobj-class.html
+    http://joelvroom.blogspot.com/2013/07/encryption-in-python-pycrypto.html
+    http://pumka.net/2009/12/19/reading-writing-and-converting-rsa-keys-in-pem-der-publickeyblob-and-privatekeyblob-formats/
 
+    input args:
+    KEY_PATH is the full path to the key file
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    output:
+    RSAObject is a pycrypto RSAobj which includes the following fields: modulus
+    and size, public exponent, private exponent, the two generating primes, and
+    the CRT coefficient (1/p) mod q.
+    '''
+    keyFile = open(KEY_PATH, 'rb')
+    keyString = keyFile.read()
+    keyFile.close()
+    RSAObject = RSA.importKey(keyString)
+    return RSAObject
