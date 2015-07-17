@@ -189,7 +189,7 @@ def watermark_dir(key, IMAGE_PATH):
     for imageFile in imageList:
         # Split the name from the extension
         imageName, imageExt = os.path.splitext(imageFile)
-        if imageExt in validExt:
+        if imageExt.lower() in validExt:
             fullPath = IMAGE_PATH + imageFile
             image = cv2.imread(fullPath)
             imageHash = hash_file(fullPath)
@@ -230,3 +230,23 @@ def import_key(KEY_PATH):
     keyFile.close()
     RSAObject = RSA.importKey(keyString)
     return RSAObject
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
